@@ -1,0 +1,25 @@
+# Python compiled files
+__pycache__/
+*.py[co]
+*.pyo
+
+# Distribution / packaging
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment
+.venv/
+
+# VS Code settings
+.vscode/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Python bytecode cache for Cython
+*.cyd
