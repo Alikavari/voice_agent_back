@@ -138,3 +138,12 @@ async def upload_voice(voice: UploadFile = File(...)):
     # return transcript.text
     # return {"filename": unique_name, "content_type": voice.content_type, "size": size}
     return {"amount": 10, "token": "BTC", "leverage": 5, "position": "long"}
+
+
+def main():
+    import uvicorn
+    uvicorn.run("trading_backend.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+if __name__ == "__main__":
+    main()
