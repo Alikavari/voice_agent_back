@@ -37,6 +37,9 @@ Rules:
 
 Notes:
 The input text comes from speech-to-text (STT), which may contain errors. For example, “Open one hundred dollar BTC long” might be transcribed as “open 100$ BTC lunch” or “line.”
+if user mentioned all field except  leaverage  Consider this as normal trade command and fill all commands if user mentioned all field except leverage set leaverage to 1 (default)
+user may set/edit  amount to zero  or clear amount in this conditons you should fill amount field 0 and assign null/none to other fields
+maximum leverage is 1 and max is 50
 """
 
 # -----------------------------
@@ -66,13 +69,13 @@ def generate_trade_command(user_input: str) -> TradeCommand | None:
 # -----------------------------
 if __name__ == "__main__":
     # Normal trade
-    user_request = "Buy 1 ETH with 5x leverage long."
+    user_request = "Buy 1 ETH  long."
     trade_normal = generate_trade_command(user_request)
     if trade_normal:
         print("Normal Trade:", trade_normal.model_dump_json())
 
     # Edit trade (stateless)
-    user_edit_request = "Edit leverage to 3x"
+    user_edit_request = "set amount to zero"
     trade_edit = generate_trade_command(user_edit_request)
     if trade_edit:
         print("Edit Trade:", trade_edit.model_dump_json())

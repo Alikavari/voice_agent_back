@@ -33,5 +33,5 @@ allow-direct-references = true
 packages = ["trading_backend"]
 
 [tool.rye.scripts]
-start = "uvicorn trading_backend.main:app --reload --host 0.0.0.0 --port 8000"
+start = "python3.10 ./trading_backend/main.py"
 
