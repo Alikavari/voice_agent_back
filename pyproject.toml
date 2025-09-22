@@ -11,9 +11,10 @@ dependencies = [
     "pydantic",
     "openai",
     "aiofiles>=24.1.0",
+    "deepgram-sdk",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.10"
 
 [project.scripts]
 "voice-agent" = "trading_backend.main:main"
