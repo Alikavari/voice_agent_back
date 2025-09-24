@@ -23,7 +23,7 @@ requires-python = ">= 3.10"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.rye]
+[tool.uv]
 managed = true
 dev-dependencies = []
 
@@ -32,7 +32,3 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["trading_backend"]
-
-[tool.rye.scripts]
-start = "python3.10 ./trading_backend/main.py"
-

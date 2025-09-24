@@ -1,7 +1,12 @@
+## Build binary
+
+```bash
+uv build --wheel --clean
+```
+
 ## Creating Docker image
 
-```
-rye build --wheel --clean
+```bash
 docker build . --tag your-image-name
 ```
 

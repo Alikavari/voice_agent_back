@@ -9,7 +9,7 @@ import aiofiles
 from contextlib import asynccontextmanager
 import assemblyai as aai
 from dotenv import load_dotenv
-from llm_agent.agent import generate_trade_command
+from .llm_agent.agent import generate_trade_command
 from deepgram import DeepgramClient
 from deepgram import PrerecordedOptions, FileSource, DeepgramClient
 
@@ -156,7 +156,7 @@ async def upload_voice(voice: UploadFile = File(...)):
 def main():
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("trading_backend.main:app", host="0.0.0.0", port=8000, reload=True)
 
 
 if __name__ == "__main__":
