@@ -14,16 +14,5 @@ ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
-ENV PATH="/app/.venv/bin:$PATH"
-
 # CMD ["uv", "run", "voice-agent"]
 CMD ["/app/.venv/bin/voice-agent"]
-
-###############################
-
-# RUN pip install uv
-# RUN --mount=source=dist,target=/dist uv pip install --no-cache --system /dist/*.whl
-# WORKDIR /app
-# ENV TERM=xterm
-# EXPOSE 8000
-# CMD voice-agent
