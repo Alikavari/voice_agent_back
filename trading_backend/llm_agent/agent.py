@@ -1,56 +1,94 @@
-from typing import Literal, Optional
+import sys
+from typing import Optional
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from typing import cast
+import json
 
 load_dotenv()
 
+# -----------------------------
+# 1️⃣ Load supported tokens from markets.json
+# -----------------------------
+TOKENS_FILE = "markets.json"
+
+
+class Market(BaseModel):
+    id: int
+    name: str
+    symbol: str
+    asset: str
+    pricePrecision: int
+    quantityPrecision: int
+    isValid: bool
+    minAcceptableQuoteValue: float
+    minAcceptablePortionLF: str
+    tradingFee: str
+    maxLeverage: int
+    maxNotionalValue: int
+    maxFundingRate: str
+    rfqAllowed: bool
+    hedgerFeeOpen: str
+    hedgerFeeClose: str
+    autoSlippage: float
+
+
+with open(TOKENS_FILE, "r") as f:
+    raw_data = json.load(f)
+
+markets = [Market(**entry) for entry in raw_data]
+
+# Extract list of (SYMBOL, NAME)
+SUPPORTED_TOKENS_WITH_NAMES = [(m.symbol.upper(), m.name) for m in markets]
+SUPPORTED_TOKENS = [sym for sym, _ in SUPPORTED_TOKENS_WITH_NAMES]
+
 
 # -----------------------------
-# 1️⃣ Define the structured schema
+# 2️⃣ Define structured schema
 # -----------------------------
 class TradeCommand(BaseModel):
     amount: Optional[float] = None
-    token: Optional[Literal["BTC", "ETH", "SOL", "ADA", "XRP"]] = None
+    token: Optional[str] = None
     leverage: Optional[int] = None
-    position: Optional[Literal["long", "short"]] = None
-    edit: bool  # always required
+    position: Optional[str] = None  # "long" or "short"
+    edit: bool
 
 
 # -----------------------------
-# 2️⃣ System prompt explaining rules
+# 3️⃣ System prompt with symbol + name
 # -----------------------------
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT = f"""
 You are a trading assistant. Only output JSON with the following fields:
 - amount: float
-- token: one of ['BTC', 'ETH', 'SOL', 'ADA', 'XRP']
-- leverage: int
-- position: 'long' or 'short'
+- token: symbol string (must be one of the supported coins)
+- leverage: int (1 to 50, default=1 if missing)
+- position: "long" or "short"
 - edit: boolean
 
 Rules:
-1. If the user prompt is a new trade (normal), set edit=false and fill all fields.
-2. If the user prompt is an edit of a previous trade, set edit=true. Only include fields being changed; other fields should be null.
-3. Never output extra text, only JSON.
+1. If user starts a new trade → edit=false. Fill all fields.
+2. If user edits a trade → edit=true. Only include changed fields, others must be null.
+3. If amount is zero → amount=0 and all other fields=null.
+4. If token is not clearly one of the supported tokens → token=null.
+5. User may mention coin by name (e.g., 'Ethereum') or by symbol (e.g., 'ETH') or with typos. Always resolve to the correct symbol.
+6. Never output extra text, only JSON.
 
-Notes:
-The input text comes from speech-to-text (STT), which may contain errors. For example, “Open one hundred dollar BTC long” might be transcribed as “open 100$ BTC lunch” or “line.”
-if user mentioned all field except  leaverage  Consider this as normal trade command and fill all commands if user mentioned all field except leverage set leaverage to 1 (default)
-user may set/edit  amount to zero  or clear amount in this conditons you should fill amount field 0 and assign null/none to other fields
-maximum leverage is 1 and max is 50
+Supported tokens (symbol – name):
+{", ".join(f"{sym} – {name}" for sym, name in SUPPORTED_TOKENS_WITH_NAMES)}
 """
 
+print(SYSTEM_PROMPT)
 # -----------------------------
-# 3️⃣ Initialize OpenAI client
+# 4️⃣ Initialize OpenAI client
 # -----------------------------
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = cast("str", os.getenv("OPENAI_MODEL"))
 
 
 # -----------------------------
-# 4️⃣ Function to generate trade commands
+# 5️⃣ Generate trade commands
 # -----------------------------
 def generate_trade_command(user_input: str) -> TradeCommand | None:
     response = client.beta.chat.completions.parse(
@@ -61,20 +99,30 @@ def generate_trade_command(user_input: str) -> TradeCommand | None:
         ],
         response_format=TradeCommand,
     )
-    return response.choices[0].message.parsed
+    trade = response.choices[0].message.parsed
+
+    # ✅ Normalize and validate token
+    if trade and trade.token:
+        token_upper = trade.token.upper()
+        if token_upper in SUPPORTED_TOKENS:
+            trade.token = token_upper
+        else:
+            trade.token = None
+
+    return trade
 
 
 # -----------------------------
-# 5️⃣ Example Usage
+# 6️⃣ Example Usage
 # -----------------------------
 if __name__ == "__main__":
     # Normal trade
-    user_request = "Buy 1 ETH  long."
+    user_request = "Buy 1 Ethereum long."  # should resolve to ETH
     trade_normal = generate_trade_command(user_request)
     if trade_normal:
         print("Normal Trade:", trade_normal.model_dump_json())
 
-    # Edit trade (stateless)
+    # Edit trade
     user_edit_request = "set amount to zero"
     trade_edit = generate_trade_command(user_edit_request)
     if trade_edit:

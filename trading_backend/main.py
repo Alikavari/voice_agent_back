@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from .llm_agent.agent import generate_trade_command
 from deepgram import DeepgramClient
 from deepgram import PrerecordedOptions, FileSource, DeepgramClient
+from typing import cast
 
 # --- Configuration ---
 UPLOAD_DIR = "uploads"
@@ -35,7 +36,7 @@ stt = os.getenv("STT")
 async def lifespan(app: FastAPI):
     aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
     aii_config.append(aai.TranscriptionConfig(speech_model=aai.SpeechModel.universal))
-    deepgram_api_key = os.getenv("DEEPGRAM_API_KEY")
+    deepgram_api_key = cast(str, os.getenv("DEEPGRAM_API_KEY"))
     deepgram_handler.append(DeepgramClient(deepgram_api_key))
 
     print(f"🚀 Starting service wit {stt} STT")
@@ -122,7 +123,7 @@ async def upload_voice(voice: UploadFile = File(...)):
         if True:
             # --- OpenAI timing ---
             openai_start = time.perf_counter()
-            json_out = generate_trade_command(transcript)
+            json_out = generate_trade_command(transcript)  # type: ignore   ## toDo: transcript showld be str not str| None
             logging.info(f"the json output: {json_out}")
             openai_end = time.perf_counter()
             logging.info(
